@@ -13,5 +13,7 @@ namespace supermarketapp.Models
 
         public decimal Price { get; set; }
 
+        public Discount Discount { get; set; }
+
     }
 }
