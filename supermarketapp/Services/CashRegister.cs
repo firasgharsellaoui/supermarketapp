@@ -1,6 +1,8 @@
 ﻿using supermarketapp.DTO;
+using supermarketapp.Enum;
 using supermarketapp.Interfaces;
 using supermarketapp.Models;
+using supermarketapp.UnitConverters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -111,7 +113,7 @@ namespace supermarketapp.Services
             {
                 productGroups.Add(new ProductGroup()
                 {
-                    Total = productGroup.Sum(weightedProduct => weightedProduct.Weight),
+                    Total = productGroup.Sum(weightedProduct => WeightUnitConverter.Convert(weightedProduct.Unit, WeightUnit.Kilo, weightedProduct.Weight)),
                     WeightedProduct = productGroup.First()
                 });
             }

@@ -1,3 +1,4 @@
+using supermarketapp.Enum;
 using supermarketapp.Interfaces;
 using supermarketapp.Models;
 using supermarketapp.Services;
@@ -945,6 +946,157 @@ namespace supermarketapp.tests
 
             //Assert
             Assert.Equal(22.2m, total);
+        }
+        #endregion
+
+        #region Test weighted products with conversion
+        [Fact]
+        public void ScanBasketWithWeightedDiscountGramUnit()
+        {
+            // Arrange 
+            List<WeightedProduct> weightedProducts = new List<WeightedProduct>
+            {
+                new WeightedProduct
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Weight = 1200m,
+                    Unit = WeightUnit.Gram,
+                    PricePerKilo = 5.2m,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today
+                        }
+                    }
+                },
+                new WeightedProduct
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Weight = 800m,
+                    PricePerKilo = 5.2m,
+                    Unit = WeightUnit.Gram,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today
+                        }
+                    }
+                },
+                new WeightedProduct
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Weight = 1000,
+                    Unit = WeightUnit.Gram,
+                    PricePerKilo = 5.2m,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today
+                        }
+                    }
+                }
+            };
+            Basket basket = new Basket
+            {
+                WeightedProducts = weightedProducts,
+            };
+            // Act
+            decimal total = _register.Total(basket);
+
+            //Assert
+            Assert.Equal(13.7m, total);
+        }
+        [Fact]
+        public void ScanBasketWithWeightedDiscountHavingDifferentUnits()
+        {
+            // Arrange 
+            List<WeightedProduct> weightedProducts = new List<WeightedProduct>
+            {
+                new WeightedProduct
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Weight = 1200m,
+                    Unit = WeightUnit.Gram,
+                    PricePerKilo = 5.2m,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today
+                        }
+                    }
+                },
+                new WeightedProduct
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Weight = 0.8m,
+                    PricePerKilo = 5.2m,
+                    Unit = WeightUnit.Kilo,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today
+                        }
+                    }
+                },
+                new WeightedProduct
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Weight = 2.205m, // 1 kilo = 2.205 pound
+                    Unit = WeightUnit.Pound,
+                    PricePerKilo = 5.2m,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today
+                        }
+                    }
+                }
+            };
+            Basket basket = new Basket
+            {
+                WeightedProducts = weightedProducts,
+            };
+            // Act
+            decimal total = _register.Total(basket);
+
+            //Assert
+            Assert.Equal(13.7m, total);
         }
         #endregion
 
