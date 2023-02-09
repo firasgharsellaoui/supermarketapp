@@ -1,6 +1,7 @@
 ﻿using supermarketapp.DTO;
 using supermarketapp.Interfaces;
 using supermarketapp.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -25,16 +26,24 @@ namespace supermarketapp.Services
         private decimal CalculatePrice(ProductGroup productGroup)
         {
             decimal price;
-            if (productGroup.Product.Discount != null)
+            if (productGroup.Product.Discounts != null && productGroup.Product.Discounts.Any())
             {
-                if (productGroup.Total >= productGroup.Product.Discount.ItemCount)
+                Discount activeDiscount = productGroup.Product.Discounts.FirstOrDefault(discount => discount.StartDate <= DateTime.Today && (discount.EndDate >= DateTime.Today || discount.EndDate == null));
+                if (activeDiscount != null)
                 {
-                    price = (int) (productGroup.Total / productGroup.Product.Discount.ItemCount) * productGroup.Product.Discount.TotalPrice
-                        + (productGroup.Total % productGroup.Product.Discount.ItemCount) * productGroup.Product.Price;
+                    if (productGroup.Total >= activeDiscount.ItemCount)
+                    {
+                        price = (int)(productGroup.Total / activeDiscount.ItemCount) * activeDiscount.TotalPrice
+                            + (productGroup.Total % activeDiscount.ItemCount) * productGroup.Product.Price;
+                    }
+                    else
+                    {
+                        price = (productGroup.Total % activeDiscount.ItemCount) * productGroup.Product.Price;
+                    }
                 }
                 else
                 {
-                    price = (productGroup.Total % productGroup.Product.Discount.ItemCount) * productGroup.Product.Price;
+                    price = productGroup.Total * productGroup.Product.Price;
                 }
             }
             else

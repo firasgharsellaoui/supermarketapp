@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace supermarketapp.Models
 {
@@ -13,7 +14,7 @@ namespace supermarketapp.Models
 
         public decimal Price { get; set; }
 
-        public Discount Discount { get; set; }
+        public IEnumerable<Discount> Discounts { get; set; }
 
     }
 }
