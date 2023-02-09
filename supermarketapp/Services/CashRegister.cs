@@ -9,6 +9,11 @@ namespace supermarketapp.Services
 {
     public class CashRegister : ICashRegister
     {
+        /// <summary>
+        /// Compute total price
+        /// </summary>
+        /// <param name="basket"></param>
+        /// <returns></returns>
         public decimal Total(Basket basket)
         {
             decimal total = 0;
@@ -23,6 +28,43 @@ namespace supermarketapp.Services
             }
             return total;
         }
+
+        /// <summary>
+        /// Check if the requested products are in stock
+        /// </summary>
+        /// <param name="basket"></param>
+        /// <returns></returns>
+        public bool AreProductsInStock(Basket basket)
+        {
+            bool isInStock = true;
+            List<ProductGroup> productGroups = new List<ProductGroup>();
+            productGroups = GroupProductsByCode(basket);
+            productGroups.ForEach(productGroup =>
+            {
+                if (!IsProductGroupInStock(productGroup))
+                {
+                    isInStock = false;
+                }
+            });
+            return isInStock;
+        }
+
+
+        /// <summary>
+        /// Check if a product group in stock
+        /// </summary>
+        /// <param name="productGroup"></param>
+        /// <returns></returns>
+        private bool IsProductGroupInStock(ProductGroup productGroup)
+        {
+            return productGroup.Total <= productGroup.Product.RemainingItemsCount ;
+        }
+
+        /// <summary>
+        /// Compute product group price
+        /// </summary>
+        /// <param name="productGroup"></param>
+        /// <returns></returns>
         private decimal CalculatePrice(ProductGroup productGroup)
         {
             decimal price;
@@ -52,6 +94,13 @@ namespace supermarketapp.Services
             }
             return price;
         }
+
+        /// <summary>
+        /// Transform basket to List of Product Group
+        /// This method is used to check for possible discount
+        /// </summary>
+        /// <param name="basket"></param>
+        /// <returns></returns>
         private List<ProductGroup> GroupProductsByCode(Basket basket)
         {
             List<ProductGroup> productGroups = new List<ProductGroup>();

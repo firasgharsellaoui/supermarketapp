@@ -14,6 +14,8 @@ namespace supermarketapp.Models
 
         public decimal Price { get; set; }
 
+        public decimal RemainingItemsCount { get; set; }
+
         public IEnumerable<Discount> Discounts { get; set; }
 
     }

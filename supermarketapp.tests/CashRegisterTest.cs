@@ -8,12 +8,12 @@ using Xunit;
 namespace supermarketapp.tests
 {
     public class CashRegisterTest
-    {        
+    {
         private readonly ICashRegister _register;
         public CashRegisterTest()
         {
             // TODO : Implement dependency injection
-            _register = new CashRegister();    
+            _register = new CashRegister();
         }
 
 
@@ -36,21 +36,21 @@ namespace supermarketapp.tests
             // Arrange 
             List<Product> products = new List<Product>
             {
-                new Product 
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductA",
                     Code = "P101",
                     Price = 5.2m
                 },
-                new Product 
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductB",
                     Code = "P102",
                     Price = 6.8m
                 },
-                new Product 
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductC",
@@ -75,7 +75,7 @@ namespace supermarketapp.tests
             // Arrange 
             List<Product> products = new List<Product>
             {
-                new Product 
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductA",
@@ -107,7 +107,7 @@ namespace supermarketapp.tests
                         }
                     }
                 },
-                new Product 
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductC",
@@ -132,7 +132,7 @@ namespace supermarketapp.tests
             // Arrange 
             List<Product> products = new List<Product>
             {
-                new Product 
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductA",
@@ -145,11 +145,11 @@ namespace supermarketapp.tests
                             DiscountId = Guid.NewGuid(),
                             ItemCount = 2,
                             TotalPrice = 8.5m,
-                            StartDate = DateTime.Today 
+                            StartDate = DateTime.Today
                         }
                     }
                 },
-                 new Product 
+                 new Product
                  {
                      ProductId = Guid.NewGuid(),
                      Name = "ProductA",
@@ -164,9 +164,9 @@ namespace supermarketapp.tests
                             TotalPrice = 8.5m,
                             StartDate = DateTime.Today
                         }
-                    }                
+                    }
                  },
-                new Product 
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductC",
@@ -191,7 +191,7 @@ namespace supermarketapp.tests
             // Arrange 
             List<Product> products = new List<Product>
             {
-                new Product 
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductA",
@@ -208,23 +208,6 @@ namespace supermarketapp.tests
                         }
                     }
                 },
-                 new Product 
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
                  new Product
                  {
                     ProductId = Guid.NewGuid(),
@@ -276,7 +259,24 @@ namespace supermarketapp.tests
                         }
                     }
                 },
-                new Product 
+                 new Product
+                 {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Price = 5.2m,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today
+                        }
+                    }
+                },
+                new Product
                 {
                     ProductId = Guid.NewGuid(),
                     Name = "ProductC",
@@ -509,6 +509,136 @@ namespace supermarketapp.tests
             //Assert
             Assert.Equal(10.4m, total);
 
+        }
+
+        [Fact]
+        public void NotInStocKItem()
+        {
+            // Arrange 
+            List<Product> products = new List<Product>
+            {
+                new Product
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Price = 5.2m ,
+                    RemainingItemsCount = 2,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today.AddDays(-1),
+                            EndDate = DateTime.Today.AddDays(-1)
+                        }
+                    }
+                },
+                new Product
+                {
+                ProductId = Guid.NewGuid(),
+                Name = "ProductA",
+                Code = "P101",
+                Price = 5.2m,
+                RemainingItemsCount = 2,
+                Discounts = new List<Discount>()
+                {
+                    new Discount
+                    {
+                        DiscountId = Guid.NewGuid(),
+                        ItemCount = 2,
+                        TotalPrice = 8.5m,
+                        StartDate = DateTime.Today.AddDays(-1),
+                        EndDate = DateTime.Today.AddDays(-1)
+                    }
+                }
+            },
+                new Product
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Price = 5.2m ,
+                    RemainingItemsCount = 2,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today.AddDays(-1),
+                            EndDate = DateTime.Today.AddDays(-1)
+                        }
+                    }
+                },
+            };
+            Basket basket = new Basket
+            {
+                Products = products
+            };
+            // Act
+            bool AreInStock = _register.AreProductsInStock(basket);
+
+            //Assert
+            Assert.False(AreInStock);
+        }
+        [Fact]
+        public void AreInStocKItems()
+        {
+            // Arrange 
+            List<Product> products = new List<Product>
+            {
+                new Product
+                {
+                    ProductId = Guid.NewGuid(),
+                    Name = "ProductA",
+                    Code = "P101",
+                    Price = 5.2m ,
+                    RemainingItemsCount = 2,
+                    Discounts = new List<Discount>()
+                    {
+                        new Discount
+                        {
+                            DiscountId = Guid.NewGuid(),
+                            ItemCount = 2,
+                            TotalPrice = 8.5m,
+                            StartDate = DateTime.Today.AddDays(-1),
+                            EndDate = DateTime.Today.AddDays(-1)
+                        }
+                    }
+                },
+                new Product
+                {
+                ProductId = Guid.NewGuid(),
+                Name = "ProductA",
+                Code = "P101",
+                Price = 5.2m,
+                RemainingItemsCount = 2,
+                Discounts = new List<Discount>()
+                {
+                    new Discount
+                    {
+                        DiscountId = Guid.NewGuid(),
+                        ItemCount = 2,
+                        TotalPrice = 8.5m,
+                        StartDate = DateTime.Today.AddDays(-1),
+                        EndDate = DateTime.Today.AddDays(-1)
+                    }
+                }
+            }
+            };
+            Basket basket = new Basket
+            {
+                Products = products
+            };
+            // Act
+            bool AreInStock = _register.AreProductsInStock(basket);
+
+            //Assert
+            Assert.True(AreInStock);
         }
     }
 }
