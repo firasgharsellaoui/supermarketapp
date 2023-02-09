@@ -6,8 +6,11 @@ namespace supermarketapp.Models
     {
         public Basket() 
         { 
-            Products= new List<Product>();
+            UnitProducts = new List<UnitProduct>();
+            WeightedProducts = new List<WeightedProduct>();
         }
-        public List<Product> Products { get; set; }
+        public List<UnitProduct> UnitProducts { get; set; }
+        public List<WeightedProduct> WeightedProducts { get; set; }
+
     }
 }

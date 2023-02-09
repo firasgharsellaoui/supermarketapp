@@ -17,17 +17,27 @@ namespace supermarketapp.Services
         public decimal Total(Basket basket)
         {
             decimal total = 0;
-            if (basket != null && basket.Products != null)
+            if (basket != null )
             {
                 List<ProductGroup> productGroups = new List<ProductGroup>();
                 productGroups = GroupProductsByCode(basket);
                 productGroups.ForEach(productGroup =>
                 {
-                    total += CalculatePrice(productGroup);
+                    Discount activeDiscount = new Discount();
+                    if (productGroup.UnitProduct != null  && productGroup.UnitProduct.Discounts.Any())
+                    {
+                        activeDiscount = productGroup.UnitProduct.Discounts.FirstOrDefault(discount => discount.StartDate <= DateTime.Today && (discount.EndDate >= DateTime.Today || discount.EndDate == null));
+                    }
+                    if (productGroup.WeightedProduct != null && productGroup.WeightedProduct.Discounts.Any())
+                    {
+                        activeDiscount = productGroup.WeightedProduct.Discounts.FirstOrDefault(discount => discount.StartDate <= DateTime.Today && (discount.EndDate >= DateTime.Today || discount.EndDate == null));
+                    }
+                    total += ComputePrice(productGroup,activeDiscount);
                 });
             }
             return total;
         }
+
 
         /// <summary>
         /// Check if the requested products are in stock
@@ -57,7 +67,7 @@ namespace supermarketapp.Services
         /// <returns></returns>
         private bool IsProductGroupInStock(ProductGroup productGroup)
         {
-            return productGroup.Total <= productGroup.Product.RemainingItemsCount ;
+            return productGroup.Total <= productGroup.UnitProduct.RemainingItemsCount ;
         }
 
         /// <summary>
@@ -65,32 +75,17 @@ namespace supermarketapp.Services
         /// </summary>
         /// <param name="productGroup"></param>
         /// <returns></returns>
-        private decimal CalculatePrice(ProductGroup productGroup)
+        private decimal ComputePrice(ProductGroup productGroup, Discount activeDiscount)
         {
-            decimal price;
-            if (productGroup.Product.Discounts != null && productGroup.Product.Discounts.Any())
+            decimal price = 0;
+            if (productGroup.UnitProduct != null)
             {
-                Discount activeDiscount = productGroup.Product.Discounts.FirstOrDefault(discount => discount.StartDate <= DateTime.Today && (discount.EndDate >= DateTime.Today || discount.EndDate == null));
-                if (activeDiscount != null)
-                {
-                    if (productGroup.Total >= activeDiscount.ItemCount)
-                    {
-                        price = (int)(productGroup.Total / activeDiscount.ItemCount) * activeDiscount.TotalPrice
-                            + (productGroup.Total % activeDiscount.ItemCount) * productGroup.Product.Price;
-                    }
-                    else
-                    {
-                        price = (productGroup.Total % activeDiscount.ItemCount) * productGroup.Product.Price;
-                    }
-                }
-                else
-                {
-                    price = productGroup.Total * productGroup.Product.Price;
-                }
+                price = ComputeUnitProductPrice(productGroup, activeDiscount);
             }
-            else
+            if (productGroup.WeightedProduct != null)
             {
-                price = productGroup.Total * productGroup.Product.Price;
+                price = ComputeWeightedProductPrice(productGroup, activeDiscount);
+
             }
             return price;
         }
@@ -104,15 +99,94 @@ namespace supermarketapp.Services
         private List<ProductGroup> GroupProductsByCode(Basket basket)
         {
             List<ProductGroup> productGroups = new List<ProductGroup>();
-            foreach (var productGroup in basket.Products.GroupBy(product => product.Code))
+            foreach (var productGroup in basket.UnitProducts.GroupBy(product => product.Code))
             {
                 productGroups.Add(new ProductGroup()
                 {
                     Total = productGroup.Count(),
-                    Product = productGroup.First()
+                    UnitProduct = productGroup.First()
+                });
+            }
+            foreach (var productGroup in basket.WeightedProducts.GroupBy(product => product.Code))
+            {
+                productGroups.Add(new ProductGroup()
+                {
+                    Total = productGroup.Sum(weightedProduct => weightedProduct.Weight),
+                    WeightedProduct = productGroup.First()
                 });
             }
             return productGroups;
         }
+
+        /// <summary>
+        /// Compute unit product price
+        /// </summary>
+        /// <param name="productGroup"></param>
+        /// <param name="activeDiscount"></param>
+        /// <returns></returns>
+        private decimal ComputeUnitProductPrice(ProductGroup productGroup, Discount activeDiscount)
+        {
+            decimal price;
+            if (productGroup.UnitProduct.Discounts != null && productGroup.UnitProduct.Discounts.Any())
+            {
+                if (activeDiscount != null)
+                {
+                    if (productGroup.Total >= activeDiscount.ItemCount)
+                    {
+                        price = (int)(productGroup.Total / activeDiscount.ItemCount) * activeDiscount.TotalPrice
+                            + (productGroup.Total % activeDiscount.ItemCount) * productGroup.UnitProduct.Price;
+                    }
+                    else
+                    {
+                        price = (productGroup.Total % activeDiscount.ItemCount) * productGroup.UnitProduct.Price;
+                    }
+                }
+                else
+                {
+                    price = productGroup.Total * productGroup.UnitProduct.Price;
+                }
+            }
+            else
+            {
+                price = productGroup.Total * productGroup.UnitProduct.Price;
+            }
+            return price;
+        }
+        
+        /// <summary>
+        /// Compute weighted product price
+        /// </summary>
+        /// <param name="productGroup"></param>
+        /// <param name="activeDiscount"></param>
+        /// <returns></returns>
+        private decimal ComputeWeightedProductPrice(ProductGroup productGroup, Discount activeDiscount)
+        {
+            decimal price;
+            if (productGroup.WeightedProduct.Discounts != null && productGroup.WeightedProduct.Discounts.Any())
+            {
+                if (activeDiscount != null)
+                {
+                    if (productGroup.Total >= activeDiscount.ItemCount)
+                    {
+                        price = (int)(productGroup.Total / activeDiscount.ItemCount) * activeDiscount.TotalPrice
+                            + (productGroup.Total % activeDiscount.ItemCount) * productGroup.WeightedProduct.PricePerKilo;
+                    }
+                    else
+                    {
+                        price = (productGroup.Total % activeDiscount.ItemCount) * productGroup.WeightedProduct.PricePerKilo;
+                    }
+                }
+                else
+                {
+                    price = productGroup.Total * productGroup.WeightedProduct.PricePerKilo;
+                }
+            }
+            else
+            {
+                price = productGroup.Total * productGroup.WeightedProduct.PricePerKilo;
+            }
+            return price;
+        }
+
     }
 }

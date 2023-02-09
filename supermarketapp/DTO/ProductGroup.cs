@@ -5,6 +5,8 @@ namespace supermarketapp.DTO
     public class ProductGroup
     {
         public decimal Total { get; set; }
-        public Product Product { get; set; }
+        public UnitProduct UnitProduct { get; set; }
+        public WeightedProduct WeightedProduct { get; set; }
+
     }
 }

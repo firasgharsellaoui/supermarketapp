@@ -4,10 +4,13 @@ namespace supermarketapp.Models
 {
     public class ProductCatalog
     {
-        ProductCatalog() 
+        ProductCatalog()
         {
-            Products = new List<Product>();
+            UnitProducts = new List<UnitProduct>();
+            WeightedProducts = new List<WeightedProduct>();
         }
-        public List<Product> Products { get; set;}
+        public List<UnitProduct> UnitProducts { get; set; }
+        public List<WeightedProduct> WeightedProducts { get; set; }
+
     }
 }
