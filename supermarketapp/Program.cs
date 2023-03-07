@@ -18,8 +18,6 @@ namespace supermarketapp
                 .UseStartup<Startup>();
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddScoped<ICashRegister, CashRegister>();
-
         }
 
     }

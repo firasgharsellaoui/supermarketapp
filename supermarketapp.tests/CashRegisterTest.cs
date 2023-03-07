@@ -1,3 +1,4 @@
+using Katas.Supermarket.Promotions;
 using supermarketapp.Enum;
 using supermarketapp.Interfaces;
 using supermarketapp.Models;
@@ -8,1097 +9,227 @@ using Xunit;
 
 namespace supermarketapp.tests
 {
-    public class CashRegisterTest
+    public class SuperMarketTests
     {
-        private readonly ICashRegister _register;
-        public CashRegisterTest()
-        {
-            // TODO : Implement dependency injection
-            _register = new CashRegister();
-        }
+        private const int Beans = 1;
+        private const int Avocados = 2;
+        private const int Soda = 3;
 
-        #region Test basket 
+        private static readonly List<Product> Products = new List<Product>
+        {
+            new Product(Guid.NewGuid(), "Can of Beans", 1 , 0.65M , WeightUnit.Unit),
+            new Product(Guid.NewGuid(), "Avocados", 2 , 1.25M , WeightUnit.Kilo),
+            new Product(Guid.NewGuid(), "Can of Soda", 3 , 2.05M, WeightUnit.Unit)
+        };
+        private static readonly BuyXForY BuyThreeKiloOfBeansForThreePromotion = new BuyXForY(3, 3);
+        private static readonly BuyXGetYFree BuyOneSodaGetOneFreePromotion = new BuyXGetYFree(1, 1);
+
+
+        #region Test Cart 
         [Fact]
-        public void ScanEmptyBasket()
+        public void ScanEmptyCart()
         {
             // Arrange 
-            Basket emptyBasket = new Basket();
-
+            Cart emptyCart = new Cart();
+            Supermarket _supermarket = new(Products, new Dictionary<int, IPromotion>());
+            
             // Act
-            decimal total = _register.Total(emptyBasket);
+            decimal total = _supermarket.Checkout(emptyCart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(0, total);
 
         }
         [Fact]
-        public void ScanBasketWithItems()
+        public void ScanCartWithOneItemEach()
         {
             // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m
-                },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductB",
-                    Code = "P102",
-                    Price = 6.8m
-                },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductC",
-                    Code = "P103",
-                    Price = 10
-                }
-            };
-            Basket basket = new Basket
-            {
-                UnitProducts = products
-            };
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
+                    {
+                        new CartItem(Beans, 1,WeightUnit.Unit),
+                        new CartItem(Avocados, 1,WeightUnit.Kilo),
+                        new CartItem(Soda, 1,WeightUnit.Unit)
+                    };
+            Supermarket _supermarket = new Supermarket(Products, new Dictionary<int, IPromotion>());
+
             // Act
-            decimal total = _register.Total(basket);
+            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
-            Assert.Equal(22, total);
+            Assert.Equal(3.95M, total);
+
+        }
+
+        [Fact]
+        public void ScanCartWithMultipleItems()
+        {
+            // Arrange 
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
+                    {
+                        new CartItem(Beans, 3,WeightUnit.Unit),
+                        new CartItem(Avocados, 2,WeightUnit.Kilo),
+                        new CartItem(Soda, 2,WeightUnit.Unit)
+                    };
+            Supermarket _supermarket = new Supermarket(Products, new Dictionary<int, IPromotion>());
+
+            // Act
+            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+
+            //Assert
+            Assert.Equal(8.55M, total);
 
         }
         #endregion
 
-        #region Test discount
+        #region Test Promotion 
+        
         [Fact]
-        public void ScanBasketNotAppliedDiscountDueToItemCountCondition()
+        public void ScanCartBuyThreeKiloBeansForThree()
         {
             // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
                     {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 3,
-                            TotalPrice = 11.7m
-                        }
-                    }
-                },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 3,
-                            TotalPrice = 11.7m
-                        }
-                    }
-                },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductC",
-                    Code = "P103",
-                    Price = 10
-                }
-            };
-            Basket basket = new Basket
+                        new CartItem(Beans, 3,WeightUnit.Unit)
+                    };
+            Dictionary<int, IPromotion> BuyThreeKiloOfBeansForThree = new Dictionary<int, IPromotion>
             {
-                UnitProducts = products
+                { Beans, BuyThreeKiloOfBeansForThreePromotion}
             };
+            Supermarket _supermarket = new Supermarket(Products, BuyThreeKiloOfBeansForThree);
+
             // Act
-            decimal total = _register.Total(basket);
+            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
-            Assert.Equal(20.4m, total);
+            Assert.Equal(3, total);
 
         }
+
         [Fact]
-        public void ScanBasketWithAppliedDiscountItemCountEqualsToTotal()
+        public void ScanCartBuyOneSodaGetOneFree()
         {
             // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
                     {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                     ProductId = Guid.NewGuid(),
-                     Name = "ProductA",
-                     Code = "P101",
-                     Price = 5.2m ,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                 },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductC",
-                    Code = "P103",
-                    Price = 10
-                }
-            };
-            Basket basket = new Basket
+                        new CartItem(Soda, 2,WeightUnit.Unit)
+                    };
+            Dictionary<int, IPromotion> BuyOneSodaGetOneFree = new Dictionary<int, IPromotion>
             {
-                UnitProducts = products
+                {Soda, BuyOneSodaGetOneFreePromotion},
             };
+            Supermarket _supermarket = new Supermarket(Products, BuyOneSodaGetOneFree);
+
             // Act
-            decimal total = _register.Total(basket);
+            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
-            Assert.Equal(18.5m, total);
+            Assert.Equal(2.05M, total);
 
         }
+
         [Fact]
-        public void ScanBasketWithAppliedDiscountItemTotalSuperiorToItemCount()
+        public void ScanCartMultiPromotions()
         {
             // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
             {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductC",
-                    Code = "P103",
-                    Price = 10
-                }
+                new CartItem(Beans, 3,WeightUnit.Unit),
+                new CartItem(Soda, 2,WeightUnit.Unit)
             };
-            Basket basket = new Basket
+            Dictionary<int, IPromotion> promotions = new Dictionary<int, IPromotion>
             {
-                UnitProducts = products
+                {   Soda, BuyOneSodaGetOneFreePromotion },
+                {   Beans, BuyThreeKiloOfBeansForThreePromotion }
+
             };
+            Supermarket _supermarket = new Supermarket(Products, promotions);
+
             // Act
-            decimal total = _register.Total(basket);
+            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
-            // 2 discounts should be applied and one with no discount 8.5 * 2 + 5.2 + 10 = 32.2
-            Assert.Equal(32.2m, total);
+            Assert.Equal(5.05M, total);
+
+        }
+
+        [Fact]
+        public void ScanCartMultiPromotionsWithOneItemWithoutPromotion()
+        {
+            // Arrange 
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
+            {
+                new CartItem(Beans, 3,WeightUnit.Unit),
+                new CartItem(Soda, 2,WeightUnit.Unit),
+                new CartItem(Avocados, 1,WeightUnit.Unit)
+            };
+            Dictionary<int, IPromotion> promotions = new Dictionary<int, IPromotion>
+            {
+                {   Soda, BuyOneSodaGetOneFreePromotion },
+                {   Beans, BuyThreeKiloOfBeansForThreePromotion }
+
+            };
+            Supermarket _supermarket = new Supermarket(Products, promotions);
+
+            // Act
+            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+
+            //Assert
+            Assert.Equal(6.30M, total);
+
+        }
+
+        [Fact]
+        public void ScanCartOneItemApplyPromotionTwice()
+        {
+            // Arrange 
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
+            {
+                new CartItem(Beans, 6,WeightUnit.Unit)
+            };
+            Dictionary<int, IPromotion> promotions = new Dictionary<int, IPromotion>
+            {
+                {   Beans, BuyThreeKiloOfBeansForThreePromotion }
+
+            };
+            Supermarket _supermarket = new Supermarket(Products, promotions);
+
+            // Act
+            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+
+            //Assert
+            Assert.Equal(6M, total);
+
+        }
+
+
+        [Fact]
+        public void ScanCartAvocadosWeightConversion()
+        {
+            // Arrange 
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
+            {
+                new CartItem(Avocados, 2.205M,WeightUnit.Pound)
+            };
+            Dictionary<int, IPromotion> promotions = new Dictionary<int, IPromotion>
+            {
+            };
+            Supermarket _supermarket = new Supermarket(Products, promotions);
+
+            // Act
+            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+
+            //Assert
+            Assert.Equal(1.25M, Math.Round(total,2));
 
         }
         #endregion
-
-        #region Test multi discount and validation with start and end date
-        [Fact]
-        public void ScanBasketDiscountItemWithNoEndDate()
-        {
-            // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                }
-            };
-            Basket basket = new Basket
-            {
-                UnitProducts = products
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(8.5m, total);
-
-        }
-        [Fact]
-        public void ScanBasketDiscountItemWithValidStartAndEndDate()
-        {
-            // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today,
-                            EndDate = DateTime.Today
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today,
-                            EndDate = DateTime.Today
-                        }
-                    }
-                }
-            };
-            Basket basket = new Basket
-            {
-                UnitProducts = products
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(8.5m, total);
-
-        }
-        [Fact]
-        public void ScanBasketDiscountItemWithInvalidEndDate()
-        {
-            // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today.AddDays(-1),
-                            EndDate = DateTime.Today.AddDays(-1)
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today.AddDays(-1),
-                            EndDate = DateTime.Today.AddDays(-1)
-                        }
-                    }
-                }
-            };
-            Basket basket = new Basket
-            {
-                UnitProducts = products
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(10.4m, total);
-
-        }
-        [Fact]
-        public void ScanBasketDiscountItemWithInvalidStartDate()
-        {
-            // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today.AddDays(-1),
-                            EndDate = DateTime.Today.AddDays(-1)
-                        }
-                    }
-                },
-                 new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today.AddDays(-1),
-                            EndDate = DateTime.Today.AddDays(-1)
-                        }
-                    }
-                }
-            };
-            Basket basket = new Basket
-            {
-                UnitProducts = products
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(10.4m, total);
-
-        }
-        #endregion
-
-        #region Test stock
-        [Fact]
-        public void NotInStocKItem()
-        {
-            // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    RemainingItemsCount = 2,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today.AddDays(-1),
-                            EndDate = DateTime.Today.AddDays(-1)
-                        }
-                    }
-                },
-                new UnitProduct
-                {
-                ProductId = Guid.NewGuid(),
-                Name = "ProductA",
-                Code = "P101",
-                Price = 5.2m,
-                RemainingItemsCount = 2,
-                Discounts = new List<Discount>()
-                {
-                    new Discount
-                    {
-                        DiscountId = Guid.NewGuid(),
-                        ItemCount = 2,
-                        TotalPrice = 8.5m,
-                        StartDate = DateTime.Today.AddDays(-1),
-                        EndDate = DateTime.Today.AddDays(-1)
-                    }
-                }
-            },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    RemainingItemsCount = 2,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today.AddDays(-1),
-                            EndDate = DateTime.Today.AddDays(-1)
-                        }
-                    }
-                },
-            };
-            Basket basket = new Basket
-            {
-                UnitProducts = products
-            };
-            // Act
-            bool AreInStock = _register.AreProductsInStock(basket);
-
-            //Assert
-            Assert.False(AreInStock);
-        }
-        [Fact]
-        public void AreInStocKItems()
-        {
-            // Arrange 
-            List<UnitProduct> products = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    RemainingItemsCount = 2,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today.AddDays(-1),
-                            EndDate = DateTime.Today.AddDays(-1)
-                        }
-                    }
-                },
-                new UnitProduct
-                {
-                ProductId = Guid.NewGuid(),
-                Name = "ProductA",
-                Code = "P101",
-                Price = 5.2m,
-                RemainingItemsCount = 2,
-                Discounts = new List<Discount>()
-                {
-                    new Discount
-                    {
-                        DiscountId = Guid.NewGuid(),
-                        ItemCount = 2,
-                        TotalPrice = 8.5m,
-                        StartDate = DateTime.Today.AddDays(-1),
-                        EndDate = DateTime.Today.AddDays(-1)
-                    }
-                }
-            }
-            };
-            Basket basket = new Basket
-            {
-                UnitProducts = products
-            };
-            // Act
-            bool AreInStock = _register.AreProductsInStock(basket);
-
-            //Assert
-            Assert.True(AreInStock);
-        }
-        #endregion
-
-        #region Test weighted product
-        [Fact]
-        public void ScanBasketWithWeightedProducts()
-        {
-            // Arrange 
-            List<WeightedProduct> products = new List<WeightedProduct>
-            {
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1.2m,
-                    PricePerKilo = 5.2m
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductB",
-                    Code = "P102",
-                    Weight = 0.8m,
-                    PricePerKilo = 5.2m
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductC",
-                    Code = "P103",
-                    Weight = 1m,
-                    PricePerKilo = 5.2m
-                }
-            };
-            Basket basket = new Basket
-            {
-                WeightedProducts = products
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(15.6m, total);
-
-        }
-
-        [Fact]
-        public void ScanBasketWithDiscountOnWeightedProducts()
-        {
-            // Arrange 
-            List<WeightedProduct> products = new List<WeightedProduct>
-            {
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1.2m,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 0.8m,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1m,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                }
-            };
-            Basket basket = new Basket
-            {
-                WeightedProducts = products
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(13.7m, total);
-
-        }
-        #endregion
-
-        #region Test mixed and weighted products
-        [Fact]
-        public void ScanBasketWithWeightedAndUnitProducts()
-        {
-            // Arrange 
-            List<WeightedProduct> weightedProducts = new List<WeightedProduct>
-            {
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1.2m,
-                    PricePerKilo = 5.2m
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductB",
-                    Code = "P102",
-                    Weight = 0.8m,
-                    PricePerKilo = 5.2m
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductC",
-                    Code = "P103",
-                    Weight = 1m,
-                    PricePerKilo = 5.2m
-                }
-            };
-            List<UnitProduct> unitProducts = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m
-                },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductB",
-                    Code = "P102",
-                    Price = 6.8m
-                },
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductC",
-                    Code = "P103",
-                    Price = 10
-                }
-            };
-            Basket basket = new Basket
-            {
-                WeightedProducts = weightedProducts,
-                UnitProducts = unitProducts
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(37.6m, total);
-
-        }
-
-        [Fact]
-        public void ScanBasketWithWeightedAndUnitProductsHavingBothDiscount()
-        {
-            // Arrange 
-            List<WeightedProduct> weightedProducts = new List<WeightedProduct>
-            {
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1.2m,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 0.8m,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1m,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                }
-            };
-            List<UnitProduct> unitProducts = new List<UnitProduct>
-            {
-                new UnitProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m ,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new UnitProduct
-                 {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Price = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                }
-            };
-            Basket basket = new Basket
-            {
-                WeightedProducts = weightedProducts,
-                UnitProducts = unitProducts
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(22.2m, total);
-        }
-        #endregion
-
-        #region Test weighted products with conversion
-        [Fact]
-        public void ScanBasketWithWeightedDiscountGramUnit()
-        {
-            // Arrange 
-            List<WeightedProduct> weightedProducts = new List<WeightedProduct>
-            {
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1200m,
-                    Unit = WeightUnit.Gram,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 800m,
-                    PricePerKilo = 5.2m,
-                    Unit = WeightUnit.Gram,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1000,
-                    Unit = WeightUnit.Gram,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                }
-            };
-            Basket basket = new Basket
-            {
-                WeightedProducts = weightedProducts,
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(13.7m, total);
-        }
-        [Fact]
-        public void ScanBasketWithWeightedDiscountHavingDifferentUnits()
-        {
-            // Arrange 
-            List<WeightedProduct> weightedProducts = new List<WeightedProduct>
-            {
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 1200m,
-                    Unit = WeightUnit.Gram,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 0.8m,
-                    PricePerKilo = 5.2m,
-                    Unit = WeightUnit.Kilo,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                },
-                new WeightedProduct
-                {
-                    ProductId = Guid.NewGuid(),
-                    Name = "ProductA",
-                    Code = "P101",
-                    Weight = 2.205m, // 1 kilo = 2.205 pound
-                    Unit = WeightUnit.Pound,
-                    PricePerKilo = 5.2m,
-                    Discounts = new List<Discount>()
-                    {
-                        new Discount
-                        {
-                            DiscountId = Guid.NewGuid(),
-                            ItemCount = 2,
-                            TotalPrice = 8.5m,
-                            StartDate = DateTime.Today
-                        }
-                    }
-                }
-            };
-            Basket basket = new Basket
-            {
-                WeightedProducts = weightedProducts,
-            };
-            // Act
-            decimal total = _register.Total(basket);
-
-            //Assert
-            Assert.Equal(13.7m, total);
-        }
-        #endregion
-
     }
 }

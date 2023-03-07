@@ -1,23 +1,43 @@
 ﻿using supermarketapp.Enum;
 using System;
-using System.Collections.Generic;
 
 namespace supermarketapp.Models
 {
     public class Product
     {
-        public Product()
+        public Product(Guid productId, string name,int code , decimal price, WeightUnit weightUnit)
         {
-            Discounts = new List<Discount>();
+            ProductId = productId;
+            Name = name;
+            Code = code;
+            Price = price;
+            WeightUnit = weightUnit;
         }
+
+        /// <summary>
+        /// Unique identifier of the product.
+        /// </summary>
         public Guid ProductId { get; set; }
 
+        /// <summary>
+        /// Name of the product.
+        /// </summary>
         public string Name { get; set; }
 
-        // TODO : Add extra validation to check if the code is unique or not
-        public string Code { get; set; }
+        /// <summary>
+        /// Product code ( business identifier ).
+        /// </summary>
+        public int Code { get; set; }
 
-        public IEnumerable<Discount> Discounts { get; set; }
+        /// <summary>
+        /// Product price.
+        /// </summary>
+        public decimal Price { get; set; }
+
+        /// <summary>
+        /// Product measurment unit (per item, weight, volume, etc.).
+        /// </summary>
+        public WeightUnit WeightUnit { get; set; }
 
     }
 }
