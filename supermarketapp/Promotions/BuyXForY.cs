@@ -22,7 +22,7 @@ namespace Katas.Supermarket.Promotions
         {
             return _x == 0
                 ? 0
-                : (quantity / _x) * (productPrice * _x - _y);
+                : (int) (quantity / _x) * (productPrice * _x - _y);
         }
     }
 }

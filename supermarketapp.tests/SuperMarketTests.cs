@@ -132,6 +132,29 @@ namespace supermarketapp.tests
         }
 
         [Fact]
+        public void ScanCartBuyOneSodaGetOneFreeWithOneExtraSodaWithNoPromotion()
+        {
+            // Arrange 
+            Cart cart = new Cart();
+            cart.Items = new List<CartItem>
+                    {
+                        new CartItem(Soda, 3,WeightUnit.Unit)
+                    };
+            Dictionary<int, IPromotion> BuyOneSodaGetOneFree = new Dictionary<int, IPromotion>
+            {
+                {Soda, BuyOneSodaGetOneFreePromotion},
+            };
+            Supermarket supermarket = new Supermarket(Products, BuyOneSodaGetOneFree);
+
+            // Act
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
+
+            //Assert
+            Assert.Equal(4.1M, total);
+
+        }
+
+        [Fact]
         public void ScanCartMultiPromotions()
         {
             // Arrange 
