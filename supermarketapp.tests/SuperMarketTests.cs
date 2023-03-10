@@ -31,10 +31,10 @@ namespace supermarketapp.tests
         {
             // Arrange 
             Cart emptyCart = new Cart();
-            Supermarket _supermarket = new(Products, new Dictionary<int, IPromotion>());
+            Supermarket supermarket = new(Products, new Dictionary<int, IPromotion>());
             
             // Act
-            decimal total = _supermarket.Checkout(emptyCart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(emptyCart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(0, total);
@@ -51,10 +51,10 @@ namespace supermarketapp.tests
                         new CartItem(Avocados, 1,WeightUnit.Kilo),
                         new CartItem(Soda, 1,WeightUnit.Unit)
                     };
-            Supermarket _supermarket = new Supermarket(Products, new Dictionary<int, IPromotion>());
+            Supermarket supermarket = new Supermarket(Products, new Dictionary<int, IPromotion>());
 
             // Act
-            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(3.95M, total);
@@ -72,10 +72,10 @@ namespace supermarketapp.tests
                         new CartItem(Avocados, 2,WeightUnit.Kilo),
                         new CartItem(Soda, 2,WeightUnit.Unit)
                     };
-            Supermarket _supermarket = new Supermarket(Products, new Dictionary<int, IPromotion>());
+            Supermarket supermarket = new Supermarket(Products, new Dictionary<int, IPromotion>());
 
             // Act
-            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(8.55M, total);
@@ -98,10 +98,10 @@ namespace supermarketapp.tests
             {
                 { Beans, BuyThreeKiloOfBeansForThreePromotion}
             };
-            Supermarket _supermarket = new Supermarket(Products, BuyThreeKiloOfBeansForThree);
+            Supermarket supermarket = new Supermarket(Products, BuyThreeKiloOfBeansForThree);
 
             // Act
-            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(3, total);
@@ -121,10 +121,10 @@ namespace supermarketapp.tests
             {
                 {Soda, BuyOneSodaGetOneFreePromotion},
             };
-            Supermarket _supermarket = new Supermarket(Products, BuyOneSodaGetOneFree);
+            Supermarket supermarket = new Supermarket(Products, BuyOneSodaGetOneFree);
 
             // Act
-            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(2.05M, total);
@@ -147,10 +147,10 @@ namespace supermarketapp.tests
                 {   Beans, BuyThreeKiloOfBeansForThreePromotion }
 
             };
-            Supermarket _supermarket = new Supermarket(Products, promotions);
+            Supermarket supermarket = new Supermarket(Products, promotions);
 
             // Act
-            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(5.05M, total);
@@ -174,10 +174,10 @@ namespace supermarketapp.tests
                 {   Beans, BuyThreeKiloOfBeansForThreePromotion }
 
             };
-            Supermarket _supermarket = new Supermarket(Products, promotions);
+            Supermarket supermarket = new Supermarket(Products, promotions);
 
             // Act
-            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(6.30M, total);
@@ -198,10 +198,10 @@ namespace supermarketapp.tests
                 {   Beans, BuyThreeKiloOfBeansForThreePromotion }
 
             };
-            Supermarket _supermarket = new Supermarket(Products, promotions);
+            Supermarket supermarket = new Supermarket(Products, promotions);
 
             // Act
-            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(6M, total);
@@ -221,10 +221,10 @@ namespace supermarketapp.tests
             Dictionary<int, IPromotion> promotions = new Dictionary<int, IPromotion>
             {
             };
-            Supermarket _supermarket = new Supermarket(Products, promotions);
+            Supermarket supermarket = new Supermarket(Products, promotions);
 
             // Act
-            decimal total = _supermarket.Checkout(cart).TotalAfterDiscount;
+            decimal total = supermarket.Checkout(cart).TotalAfterDiscount;
 
             //Assert
             Assert.Equal(1.25M, Math.Round(total,2));
